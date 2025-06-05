@@ -1,8 +1,10 @@
 #include "hash_table/hash_table.hpp"
+#include <cassert>
 #include <iostream>
+#include <random>
 
 void test_concurrent_put() {
-  ThreadSafeHashTable table;
+  HashMap<int, Value, 100> table;
   const int num_keys = 1000;
   const int num_threads = 4;
   std::vector<std::thread> threads;
@@ -12,7 +14,7 @@ void test_concurrent_put() {
       int start = i * (num_keys / num_threads) + 1;
       int end = (i + 1) * (num_keys / num_threads);
       for (int key = start; key <= end; ++key) {
-        table.Put(key, {"value", key});
+        table.put(key, {"value", key});
       }
     });
   }
@@ -21,17 +23,15 @@ void test_concurrent_put() {
     t.join();
   }
 
-  // Проверка наличия всех ключей
   for (int key = 1; key <= num_keys; ++key) {
     Value value;
-    bool found = table.Check(key, value);
-    assert(found && value.num == key);
+    assert((table.get(key, value) != std::nullopt) && value.num == key);
   }
   std::cout << "[OK] Все ключи добавлены\n";
 }
 
 void test_random_operations() {
-  ThreadSafeHashTable table;
+  HashMap<int, Value, 100> table;
   const int M = 1000;
   const int num_threads = 4;
   const int operations_per_thread = 10000;
@@ -49,14 +49,14 @@ void test_random_operations() {
         int op = op_dist(gen);
         switch (op) {
         case 0: // Put
-          table.Put(key, {"value", key});
+          table.put(key, {"value", key});
           break;
         case 1: // Remove
-          table.Remove(key);
+          table.remove(key);
           break;
         case 2: // Check
           Value value;
-          table.Check(key, value);
+          table.get(key, value);
           break;
         }
       }
